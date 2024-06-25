@@ -1,15 +1,14 @@
 using System;
-using TMPro;
 using UnityEngine;
 
 public class StagePosition : MonoBehaviour
 {
     public static event Action<StagePosition> OnStagePositionClicked;
     public static event Action<StagePosition> OnStagePositionChanged;
+    public static event Action<StagePosition> OnStagePositionCommitted;
     
     [SerializeField] private Transform viewTarget;
     
-
     [Header("Stage Parameters")]
     public int stagePositionNumber;
     
@@ -25,6 +24,21 @@ public class StagePosition : MonoBehaviour
     [Header("Lighting")] 
     [SerializeField] private Light spotlight;
     [SerializeField] private GameObject spotlightMesh;
+    [SerializeField] private GameObject floorMarkerSystem;
+
+    private bool _hasUncommittedChanges = false;
+
+    private void OnEnable()
+    {
+        StageSelection.OnStageSelectionStarted += OnStageSelectionStart;
+        StageSelection.OnStageSelectionEnded += OnStageSelectionEnd;
+    }
+    
+    private void OnDisable()
+    {
+        StageSelection.OnStageSelectionStarted -= OnStageSelectionStart;
+        StageSelection.OnStageSelectionEnded -= OnStageSelectionEnd;
+    }
 
     public void OnInteract()
     {
@@ -49,6 +63,7 @@ public class StagePosition : MonoBehaviour
             }
         }
 
+        _hasUncommittedChanges = true;
         OnStagePositionChanged?.Invoke(this);
     }
     
@@ -59,6 +74,10 @@ public class StagePosition : MonoBehaviour
         
         if (instrumentOccupied)
         {
+            if (lastInstrument && musicianOccupied)
+            {
+                musicianOccupied.SetAnimationBool(lastInstrument?.AnimationHoldName, false);
+            }
             instrumentOccupied.transform.SetParent(musicianOrigin);
             instrumentOccupied.gameObject.SetActive(true);
             if (IsMusicianOccupied())
@@ -78,7 +97,8 @@ public class StagePosition : MonoBehaviour
                 }
             }
         }
-        
+
+        _hasUncommittedChanges = true;
         OnStagePositionChanged?.Invoke(this);
     }
 
@@ -109,14 +129,61 @@ public class StagePosition : MonoBehaviour
 
     public void OnFocusStart()
     {
-        spotlight.enabled = true;
-        spotlightMesh.SetActive(true);
+        BrightenLights();
     }
 
     public void OnFocusEnd()
     {
+        CommitSelection();
+        DimLights();
+    }
+
+    private void OnStageSelectionStart(StagePosition unusedPosition)
+    {
+        HideFloorMarker();
+    }
+
+    private void OnStageSelectionEnd()
+    {
+        DimLights();
+        if (!musicianOccupied)
+        {
+            ShowFloorMarker();
+        }
+    }
+    
+    private void BrightenLights()
+    {
+        spotlight.enabled = true;
+        spotlightMesh.SetActive(true);
+    }
+
+    private void DimLights()
+    {
         spotlight.enabled = false;
         spotlightMesh.SetActive(false);
+    }
 
+    private void ShowFloorMarker()
+    {
+        if (!musicianOccupied)
+        {
+            floorMarkerSystem.SetActive(true);
+        }
+    }
+
+    private void HideFloorMarker()
+    {
+        floorMarkerSystem.SetActive(false);
+    }
+
+    private void CommitSelection()
+    {
+        // We only want this to occur once per set of changes
+        if (_hasUncommittedChanges && musicianOccupied && instrumentOccupied)
+        {
+            OnStagePositionCommitted?.Invoke(this);
+            _hasUncommittedChanges = false;
+        }
     }
 }

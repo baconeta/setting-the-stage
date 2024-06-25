@@ -15,6 +15,8 @@ public class StageSelection : Singleton<StageSelection>
 
     private List<StagePosition> _StagePositions = new List<StagePosition>();
 
+    private int totalSelectionsCommitted = 0;
+
     public static event Action<StagePosition> OnStageSelectionStarted; 
     public static event Action OnStageSelectionEnded;
     public static event Action<StagePosition> OnStageSelectionFocusChanged; 
@@ -30,15 +32,25 @@ public class StageSelection : Singleton<StageSelection>
         gameObject.SetActive(false);
     }
 
+    protected void OnEnable()
+    {
+        StagePosition.OnStagePositionCommitted += IncrementSelectionsCommitted;
+    }
+
+    protected void OnDisable()
+    {
+        StagePosition.OnStagePositionCommitted -= IncrementSelectionsCommitted;
+    }
+
     public void ShowStageSelection(StagePosition newActiveStagePosition)
     {
         if (!gameObject.activeSelf)
         {
-            ChangeFocus(newActiveStagePosition);
+            OnStageSelectionStarted?.Invoke(newActiveStagePosition);
 
-            gameObject.SetActive(true);
+            ChangeFocus(newActiveStagePosition);
             
-            OnStageSelectionStarted?.Invoke(activeStagePosition);
+            gameObject.SetActive(true);
         }
     }
 
@@ -64,17 +76,17 @@ public class StageSelection : Singleton<StageSelection>
     {
         if (gameObject.activeSelf)
         {
-            gameObject.SetActive(false);
-            
             activeStagePosition.OnFocusEnd();
             activeStagePosition = null;
-            
+
             instrumentCarousel.CloseCarousel();
             musicianCarousel.CloseCarousel();
-            
+
             musicianInfoPanel.HidePanel();
-            
+
             OnStageSelectionEnded?.Invoke();
+            
+            gameObject.SetActive(false);
         }
     }
 
@@ -137,5 +149,15 @@ public class StageSelection : Singleton<StageSelection>
     public bool HasActiveSelection()
     {
         return activeStagePosition != null;
+    }
+
+    private void IncrementSelectionsCommitted(StagePosition _)
+    {
+        totalSelectionsCommitted += 1;
+    }
+
+    public int GetTotalSelectionsMade()
+    {
+        return totalSelectionsCommitted;
     }
 }
