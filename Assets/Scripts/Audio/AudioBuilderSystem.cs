@@ -37,7 +37,6 @@ namespace Audio
             {
                 _builtClips[index].UnloadAudioData();
             }
-            _builtClips[index] = null;
             clip?.LoadAudioData(); // Since clip can be null we use null prop
             _builtClips[index] = clip;
         }
