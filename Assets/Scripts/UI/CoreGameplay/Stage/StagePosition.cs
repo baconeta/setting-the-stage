@@ -60,7 +60,6 @@ public class StagePosition : MonoBehaviour
             if (instrumentOccupied)
             {
                 musicianOccupied.EquipInstrument(instrumentOccupied);
-                musicianOccupied.SetAnimationBool(instrumentOccupied.AnimationHoldName, true);
             }
         }
 
@@ -77,27 +76,24 @@ public class StagePosition : MonoBehaviour
         {
             AudioWrapper.Instance.PlaySound(instrumentOccupied.GetSelectionTrackName());
             
-            if (lastInstrument && musicianOccupied)
+            if (lastInstrument != null && IsMusicianOccupied())
             {
-                musicianOccupied.SetAnimationBool(lastInstrument?.AnimationHoldName, false);
+                musicianOccupied.UnequipInstrument(lastInstrument);
             }
+            
             instrumentOccupied.transform.SetParent(musicianOrigin);
             instrumentOccupied.gameObject.SetActive(true);
+            
             if (IsMusicianOccupied())
             {
                 musicianOccupied.EquipInstrument(instrumentOccupied);
-                musicianOccupied.SetAnimationBool(instrumentOccupied.AnimationHoldName, true);
             }
         }
         else
         {
-            if (musicianOccupied)
+            if (IsMusicianOccupied() && lastInstrument != null)
             {
-                musicianOccupied.UnequipInstrument();
-                if (lastInstrument)
-                {
-                    musicianOccupied.SetAnimationBool(lastInstrument?.AnimationHoldName, false);
-                }
+                musicianOccupied.UnequipInstrument(lastInstrument);
             }
         }
 
