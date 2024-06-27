@@ -3,7 +3,6 @@ using System.Linq;
 using Animation;
 using GameStructure;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public enum InstrumentProficiency
 {
@@ -107,5 +106,10 @@ public class Musician : StSObject
     public void SetAnimationBool(string animBoolName, bool enable)
     {
         _animator.SetBool(animBoolName,enable);
+    }
+
+    public void UnequipAnyInstrument()
+    {
+        instrumentSockets.RemoveInstrumentFromSocket();
     }
 }
